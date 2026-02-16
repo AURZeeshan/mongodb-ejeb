@@ -14,7 +14,6 @@ hosts:
       mgmt_user: windows
       mgmt_protocol: winrm
     flavor: standard.medium  # at least 2 CPU / 4GB RAM
-    boot_volume: true       # boot from volume to avoid ephemeral disk errors
     timeout: 600            # 10 minutes for slow boot
 
 routers:
