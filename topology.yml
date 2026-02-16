@@ -6,14 +6,16 @@ hosts:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
       mgmt_protocol: ssh
-    flavor: standard.small
+    flavor: standard.small  # Linux is lightweight
 
   - name: windows-host
     base_box:
-      image: window-2019
-      mgmt_user: windows
+      image: windows-2019  # make sure this is the pre-built CRCZ Windows image
+      mgmt_user: Administrator
       mgmt_protocol: winrm
-    flavor: standard.medium
+    flavor: standard.medium  # at least 2 CPU / 4GB RAM
+    boot_volume: true       # boot from volume to avoid ephemeral disk errors
+    timeout: 600            # 10 minutes for slow boot
 
 routers:
   - name: router
