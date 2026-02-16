@@ -1,4 +1,4 @@
-name: library-demo-training
+name: library-demo-for-windows
 
 hosts:
   - name: server
