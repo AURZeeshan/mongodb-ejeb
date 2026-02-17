@@ -34,32 +34,42 @@
 # Windows Client Configuration
 # (No external collections required)
 # ==============================
-
 - name: set up windows client
   hosts: windows-host
   gather_facts: yes
   tasks:
 
     - name: Create local Windows user
-      win_user:
+      ansible.windows.win_user:
         name: user
         password: Password123
         state: present
         groups:
           - Users
 
-    - name: Enable Remote Desktop in registry
-      win_shell: |
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
-        -Name "fDenyTSConnections" -Value 0
+    - name: Enable Remote Desktop
+      ansible.windows.win_regedit:
+        path: HKLM:\System\CurrentControlSet\Control\Terminal Server
+        name: fDenyTSConnections
+        data: 0
+        state: present
 
     - name: Enable RDP firewall rule
-      win_shell: |
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+      ansible.windows.win_firewall_rule:
+        name: "Remote Desktop"
+        enable: yes
 
     - name: Add user to Remote Desktop Users group
-      win_shell: |
-        Add-LocalGroupMember -Group "Remote Desktop Users" -Member "user"
+      ansible.windows.win_group_membership:
+        name: "Remote Desktop Users"
+        members: user
+        state: present
+
+    - name: Reboot Windows host to apply RDP changes
+      ansible.windows.win_reboot:
+        reboot_timeout: 1200
+        pre_reboot_delay: 10
+        post_reboot_delay: 30
 
 
 # ==============================
