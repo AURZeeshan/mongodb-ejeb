@@ -113,3 +113,34 @@
         delay: 30
       when: rename_result.reboot_required
 
+
+# ==============================
+# (Optional) Additional Linux Hostname Cleanup
+# ==============================
+
+- name: remove stack name prefix from hostnames of Linux nodes
+  hosts:
+    - server
+    - router
+    - man
+  gather_facts: yes
+  become: yes
+  tasks:
+
+    - name: Set new hostname
+      hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Make cloud-init preserve hostname changes
+      lineinfile:
+        path: /etc/cloud/cloud.cfg
+        regexp: '^preserve_hostname:'
+        line: 'preserve_hostname: true'
+        create: yes
+
+    - name: Remove stack name prefix from /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^\d+\.\d+\.\d+\.\d+\s+{{ stack_prefix }}'
+        state: absent
+      when: stack_prefix is defined
