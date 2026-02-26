@@ -54,11 +54,7 @@
         name: fDenyTSConnections
         data: 0
         state: present
-
-    # - name: Enable RDP firewall rule
-    #   ansible.windows.win_shell: |
-    #     Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-
+        
     - name: Add user to Remote Desktop Users group
       ansible.windows.win_group_membership:
         name: "Remote Desktop Users"
@@ -76,35 +72,6 @@
   roles:
     - role: sandbox-logging
       slf_destination_port: '{% if hostvars["man"] is defined -%} 514 {%- else -%} 515 {%- endif %}'
-
-
-# ==============================
-# Windows Hostname (ONLY reboot here)
-# ==============================
-
-# - name: remove stack name prefix from hostnames of winrm nodes
-#   hosts: windows-host
-#   gather_facts: yes
-#   tasks:
-
-#     - name: Set Windows hostname
-#       ansible.windows.win_hostname:
-#         name: "{{ inventory_hostname }}"
-#       register: rename_result
-
-#     - name: Reboot Windows asynchronously if required
-#       ansible.windows.win_reboot:
-#         reboot_timeout: 1800
-#       async: 1
-#       poll: 0
-#       when: rename_result.reboot_required
-
-#     - name: Wait for WinRM to come back online
-#       wait_for_connection:
-#         timeout: 1800
-#         delay: 60
-#         sleep: 10
-#       when: rename_result.reboot_required
 
 
 # ==============================
