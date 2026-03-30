@@ -1,4 +1,4 @@
-name: MongoDB-Mysql-Exercise
+name: mongoDB-mysql-exercise
 
 hosts:
   - name: server
