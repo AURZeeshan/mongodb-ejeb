@@ -66,7 +66,7 @@ net_mappings:
   - host: kali               # NEW — kali sits on client-switch so it can reach all via router
     network: client-switch
     ip: 192.168.30.10
-    accessible_by_user: true
+    
 
 router_mappings:
   - router: router
