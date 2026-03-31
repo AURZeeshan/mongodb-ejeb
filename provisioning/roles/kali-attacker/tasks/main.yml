@@ -10,7 +10,8 @@
       - hydra
       - medusa
       - sqlmap
-      - mongo-tools
+      - mongodb-database-tools
+      - mongodb-mongosh
       - default-mysql-client
       - curl
       - wget
