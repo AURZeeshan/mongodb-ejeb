@@ -43,13 +43,20 @@
     delay: 5
     timeout: 30
 
-- name: Insert flag document into MongoDB (unauthenticated at this point)
+- name: Insert flag document into MongoDB
   community.mongodb.mongodb_shell:
     eval: |
-      db = db.getSiblingDB('{{ mongo_db }}');
-      if (db.flags.countDocuments({name: 'admin'}) === 0) {
-        db.flags.insertOne({ name: 'admin', secret: '{{ mongo_flag }}', note: 'confidential' });
-      }
+      (function() {
+        var dbObj = db.getSiblingDB('{{ mongo_db }}');
+        if (dbObj.flags.countDocuments({name: 'admin'}) === 0) {
+          dbObj.flags.insertOne({
+            name: 'admin',
+            secret: '{{ mongo_flag }}',
+            note: 'confidential'
+          });
+        }
+        return "ok";
+      })()
   # Alternatively use a shell command if the module is unavailable:
   # command: >
   #   mongosh --quiet --eval
