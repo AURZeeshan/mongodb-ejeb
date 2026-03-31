@@ -5,6 +5,7 @@
       - gnupg
       - curl
     update_cache: yes
+    allow_unauthenticated: yes
 
 - name: Add MongoDB GPG key
   apt_key:
@@ -13,7 +14,7 @@
 
 - name: Add MongoDB apt repository
   apt_repository:
-    repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/7.0 multiverse"
+    repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse"
     state: present
     filename: mongodb-org-7.0
 
