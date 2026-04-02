@@ -182,3 +182,32 @@
         regexp: '^\d+\.\d+\.\d+\.\d+\s+{{ stack_prefix }}'
         state: absent
       when: stack_prefix is defined
+
+- name: create contestant user on all Linux hosts
+  hosts:
+    - server
+    - db-server
+    - kali
+    - routers
+  become: yes
+  tasks:
+    - name: Create contestant user
+      user:
+        name: "{{ contestant_user }}"
+        password: "{{ contestant_password | password_hash('sha512') }}"
+        shell: /bin/bash
+        create_home: yes
+        state: present
+
+    - name: Enable SSH password authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication yes'
+      notify: restart sshd
+
+  handlers:
+    - name: restart sshd
+      service:
+        name: ssh
+        state: restarted

@@ -5,3 +5,7 @@ mysql_user_password: "UserP@ss!"
 mysql_flag: "FLAG{mysql_secret_data_exposed}"
 mongo_password: "MongoP@ss!"
 mongo_flag: "FLAG{mongodb_no_auth_misconfiguration}"
+
+# Contestant login for ALL machines
+contestant_user: user
+contestant_password: "Password123"
