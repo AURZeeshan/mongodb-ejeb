@@ -84,29 +84,7 @@ groups:
       - kali
       - router
 
-monitoring_targets:
-  - node: server
-    targets:
-      - interface: ens3       # ← real NIC name on ubuntu-noble
-        port: 80
-      - interface: ens3
-        port: 443
-      - interface: ens3
-        port: 22
-
-  - node: db-server
-    targets:
-      - interface: ens3
-        port: 27017
-      - interface: ens3
-        port: 22
-
-  - node: kali
-    targets:
-      - interface: eth0       # ← Debian 12 still uses eth0, keep as-is
-        port: 22
-
-  - node: router
-    targets:
-      - interface: eth0       # ← Debian 12 router, keep eth0
-        port: 22
+# monitoring_targets removed — TCP port monitoring triggers a bug
+# in the prometheus role at line 35 that cannot be fixed from topology.yml.
+# ICMP liveness and OS metrics (CPU/RAM/disk) still work via monitor-icmp
+# and monitor-os groups above.
