@@ -69,7 +69,6 @@ router_mappings:
     network: db-switch
     ip: 192.168.40.1
 
-# ✅ Monitoring groups (GLOBAL, not inside hosts)
 groups:
   - name: monitor-icmp
     nodes:
@@ -85,30 +84,29 @@ groups:
       - kali
       - router
 
-# ✅ Monitoring targets (GLOBAL)+
 monitoring_targets:
   - node: server
     targets:
-      - interface: ansible_eth0
+      - interface: eth0   # ← was ansible_eth0, changed to eth0
         port: 80
-      - interface: ansible_eth0
+      - interface: eth0
         port: 443
-      - interface: ansible_eth0
+      - interface: eth0
         port: 22
 
   - node: db-server
     targets:
-      - interface: ansible_eth0
+      - interface: eth0   # ← was ansible_eth0, changed to eth0
         port: 27017
-      - interface: ansible_eth0
+      - interface: eth0
         port: 22
 
   - node: kali
     targets:
-      - interface: ansible_eth0
+      - interface: eth0   # ← was ansible_eth0, changed to eth0
         port: 22
 
   - node: router
     targets:
-      - interface: ansible_eth0
-        port: 22        
+      - interface: eth0   # ← was ansible_eth0, changed to eth0
+        port: 22
