@@ -9,12 +9,12 @@ hosts:
       mgmt_protocol: ssh
     flavor: standard.medium
 
-  - name: ejabberd-server              # NEW — hosts ejabberd + MySQL + Apache + phpMyAdmin
+  - name: ejabberd-server
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
       mgmt_protocol: ssh
-    flavor: standard.medium            # needs ≥2 GB RAM for ejabberd + MySQL
+    flavor: standard.medium
 
   - name: kali
     base_box:
@@ -45,12 +45,7 @@ networks:
     accessible_by_user: false
 
 net_mappings:
-
-  - host: db-server
-    network: db-switch
-    ip: 192.168.40.5
-
-  - host: ejabberd-server              # sits on server-switch so kali can reach it via router
+  - host: ejabberd-server
     network: server-switch
     ip: 192.168.20.10
 
@@ -58,7 +53,12 @@ net_mappings:
     network: client-switch
     ip: 192.168.30.10
 
+  - host: db-server
+    network: db-switch
+    ip: 192.168.40.5
+
 router_mappings:
+  # Router connects to ALL networks
   - router: router
     network: server-switch
     ip: 192.168.20.1
@@ -74,16 +74,14 @@ router_mappings:
 groups:
   - name: monitor-icmp
     nodes:
-      - server
-      - db-server
       - ejabberd-server
+      - db-server
       - kali
       - router
 
   - name: monitor-os
     nodes:
-      - server
-      - db-server
       - ejabberd-server
+      - db-server
       - kali
       - router
