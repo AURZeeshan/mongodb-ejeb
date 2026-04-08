@@ -1,0 +1,261 @@
+---
+# roles/ejabberd-server/tasks/main.yml
+
+# ============================================================
+# SECTION 0 — SSH Password Authentication
+# ============================================================
+
+- name: Install passlib for password hashing
+  apt:
+    name: python3-passlib
+    state: present
+
+- name: Set password for ubuntu user
+  shell: echo "ubuntu:Ubuntu@1234" | chpasswd
+  no_log: true
+
+- name: Enable SSH password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?PasswordAuthentication"
+    line: "PasswordAuthentication yes"
+    state: present
+
+- name: Disable SSH empty passwords
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?PermitEmptyPasswords"
+    line: "PermitEmptyPasswords no"
+    state: present
+
+- name: Restart SSH to apply auth changes
+  systemd:
+    name: ssh
+    state: restarted
+
+# ============================================================
+# SECTION 1 — System prep
+# ============================================================
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install required system packages
+  apt:
+    name:
+      - curl
+      - wget
+      - gnupg
+      - python3-pymysql
+      - mysql-server
+      - apache2
+      - php
+      - php-mysql
+      - libapache2-mod-php
+    state: present
+
+# ============================================================
+# SECTION 2 — Install Ejabberd via official APT repo
+# ============================================================
+
+- name: Add ejabberd APT repo list
+  get_url:
+    url: https://repo.process-one.net/ejabberd.list
+    dest: /etc/apt/sources.list.d/ejabberd.list
+    mode: "0644"
+
+- name: Add ejabberd APT repo GPG key
+  get_url:
+    url: https://repo.process-one.net/ejabberd.gpg
+    dest: /etc/apt/trusted.gpg.d/ejabberd.gpg
+    mode: "0644"
+
+- name: Update apt cache after adding ejabberd repo
+  apt:
+    update_cache: yes
+
+- name: Install ejabberd
+  apt:
+    name: ejabberd
+    state: present
+
+# ============================================================
+# SECTION 3 — phpMyAdmin (non-interactive)
+# ============================================================
+
+- name: Pre-seed phpMyAdmin debconf selections
+  debconf:
+    name: phpmyadmin
+    question: "{{ item.question }}"
+    value: "{{ item.value }}"
+    vtype: "{{ item.vtype }}"
+  loop:
+    - { question: "phpmyadmin/dbconfig-install",      value: "true",    vtype: "boolean" }
+    - { question: "phpmyadmin/reconfigure-webserver", value: "apache2", vtype: "select"  }
+    - { question: "phpmyadmin/mysql/admin-pass",      value: "{{ mysql_root_password }}", vtype: "password" }
+    - { question: "phpmyadmin/mysql/app-pass",        value: "{{ ejabberd_db_password }}", vtype: "password" }
+
+- name: Install phpMyAdmin
+  apt:
+    name: phpmyadmin
+    state: present
+
+# ============================================================
+# SECTION 4 — MySQL
+# ============================================================
+
+- name: Start and enable MySQL
+  systemd:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Set MySQL root password
+  mysql_user:
+    name: root
+    password: "{{ mysql_root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    host_all: yes
+    state: present
+  ignore_errors: yes
+
+- name: Create ejabberd database
+  mysql_db:
+    name: "{{ ejabberd_db_name }}"
+    state: present
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+
+- name: Create ejabberd MySQL user
+  mysql_user:
+    name: "{{ ejabberd_db_user }}"
+    password: "{{ ejabberd_db_password }}"
+    priv: "{{ ejabberd_db_name }}.*:ALL"
+    host: localhost
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    state: present
+
+- name: Flush MySQL privileges
+  mysql_query:
+    query: "FLUSH PRIVILEGES;"
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+
+# ============================================================
+# SECTION 5 — Configure Ejabberd
+# ============================================================
+
+- name: Find ejabberd.yml actual location
+  find:
+    paths:
+      - /etc/ejabberd
+      - /opt/ejabberd/conf
+      - /usr/lib/ejabberd
+      - /home/ejabberd/conf
+    patterns: "ejabberd.yml"
+    recurse: no
+  register: ejabberd_conf_found
+
+- name: Set ejabberd config path dynamically
+  set_fact:
+    ejabberd_conf: "{{ ejabberd_conf_found.files[0].path }}"
+  when: ejabberd_conf_found.files | length > 0
+
+- name: Fallback config path if not found
+  set_fact:
+    ejabberd_conf: "/etc/ejabberd/ejabberd.yml"
+  when: ejabberd_conf_found.files | length == 0
+
+- name: Ensure ejabberd config directory exists
+  file:
+    path: "{{ ejabberd_conf | dirname }}"
+    state: directory
+    owner: ejabberd
+    group: ejabberd
+    mode: "0750"
+
+- name: Deploy ejabberd.yml config from template
+  template:
+    src: ejabberd.yml.j2
+    dest: "{{ ejabberd_conf }}"
+    owner: ejabberd
+    group: ejabberd
+    mode: "0640"
+
+- name: Restart Ejabberd to apply new config
+  systemd:
+    name: ejabberd
+    state: restarted
+    enabled: yes
+
+- name: Wait for Ejabberd to be ready after restart
+  shell: ejabberdctl status
+  register: ejabberd_status
+  until: ejabberd_status.rc == 0
+  retries: 15
+  delay: 5
+
+# ============================================================
+# SECTION 6 — Import MySQL schema
+# ============================================================
+
+- name: Find Ejabberd MySQL schema
+  find:
+    paths:
+      - /usr/lib/ejabberd
+      - /usr/share/doc/ejabberd
+      - /usr/share/ejabberd
+      - /etc/ejabberd
+      - /usr/lib
+    patterns: "mysql.sql"
+    recurse: yes
+  register: schema_file
+
+- name: Import Ejabberd MySQL schema
+  mysql_db:
+    name: "{{ ejabberd_db_name }}"
+    state: import
+    target: "{{ schema_file.files[0].path }}"
+    login_user: "{{ ejabberd_db_user }}"
+    login_password: "{{ ejabberd_db_password }}"
+  when: schema_file.files | length > 0
+  ignore_errors: yes   # safe on re-runs (tables already exist)
+
+# ============================================================
+# SECTION 7 — Apache
+# ============================================================
+
+- name: Start and enable Apache2
+  systemd:
+    name: apache2
+    state: started
+    enabled: yes
+
+# ============================================================
+# SECTION 8 — Register admin user + plant flag
+# ============================================================
+
+- name: Register Ejabberd admin user
+  shell: >
+    ejabberdctl register {{ ejabberd_admin_user }} {{ ejabberd_server_ip }} {{ ejabberd_admin_password }}
+  register: register_result
+  failed_when:
+    - register_result.rc != 0
+    - "'already registered' not in register_result.stdout"
+    - "'already registered' not in register_result.stderr"
+
+- name: Plant flag in ejabberd config comment (training task target)
+  lineinfile:
+    path: "{{ ejabberd_conf }}"
+    line: "# FLAG: {{ ejabberd_flag }}"
+    insertafter: EOF
+
+- name: Print access info
+  debug:
+    msg:
+      - "Ejabberd Admin : http://{{ ejabberd_server_ip }}:5280/admin"
+      - "phpMyAdmin     : http://{{ ejabberd_server_ip }}/phpmyadmin"
+      - "Admin JID      : {{ ejabberd_admin_user }}@{{ ejabberd_server_ip }}"

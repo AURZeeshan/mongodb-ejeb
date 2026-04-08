@@ -1,19 +1,20 @@
-name: attack-sc-mongodb
+---
+name: mongodb, mysql & ejabberd attack training
 
 hosts:
-  - name: server
-    base_box:
-      image: ubuntu-noble-x86_64
-      mgmt_user: ubuntu
-      mgmt_protocol: ssh
-    flavor: standard.small
-
   - name: db-server
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
       mgmt_protocol: ssh
     flavor: standard.medium
+
+  - name: ejabberd-server              # NEW — hosts ejabberd + MySQL + Apache + phpMyAdmin
+    base_box:
+      image: ubuntu-noble-x86_64
+      mgmt_user: ubuntu
+      mgmt_protocol: ssh
+    flavor: standard.medium            # needs ≥2 GB RAM for ejabberd + MySQL
 
   - name: kali
     base_box:
@@ -52,6 +53,10 @@ net_mappings:
     network: db-switch
     ip: 192.168.40.5
 
+  - host: ejabberd-server              # sits on server-switch so kali can reach it via router
+    network: server-switch
+    ip: 192.168.20.10
+
   - host: kali
     network: client-switch
     ip: 192.168.30.10
@@ -74,6 +79,7 @@ groups:
     nodes:
       - server
       - db-server
+      - ejabberd-server
       - kali
       - router
 
@@ -81,5 +87,6 @@ groups:
     nodes:
       - server
       - db-server
+      - ejabberd-server
       - kali
       - router

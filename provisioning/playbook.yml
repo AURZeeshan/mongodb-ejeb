@@ -7,7 +7,7 @@
 - name: disable qxl
   hosts:
     - routers
-    - server
+    - ejabberd-server          # added
   gather_facts: yes
   become: yes
   tasks:
@@ -16,62 +16,26 @@
       when: ansible_os_family == 'Debian'
 
 
+
 # ==============================
-# Linux Server Setup
+# Ejabberd Server Setup
 # ==============================
 
-- name: set up server
-  hosts: server
+- name: set up ejabberd server
+  hosts: ejabberd-server
   become: yes
   roles:
-    - role: server
-      telnet_port: "{{ telnet_port }}"
-      flag: "{{ alice_flag }}"
-      flag_2: "{{ root_flag }}"
+    - role: ejabberd-server
+      ejabberd_server_ip: "192.168.20.10"
+      ejabberd_admin_user: "admin"
+      ejabberd_admin_password: "{{ ejabberd_admin_password }}"
+      mysql_root_password: "{{ mysql_root_password }}"
+      ejabberd_db_name: "ejabberd"
+      ejabberd_db_user: "ejabberd"
+      ejabberd_db_password: "{{ ejabberd_db_password }}"
+      ejabberd_flag: "{{ ejabberd_flag }}"
 
 
-# ==============================
-# Windows Client Configuration
-# (NO reboot here)
-# ==============================
-
-# - name: set up windows client
-#   hosts: windows-host
-#   gather_facts: yes
-#   tasks:
-
-#     - name: Create local Windows user
-#       ansible.windows.win_user:
-#         name: user
-#         password: Password123
-#         state: present
-#         groups:
-#           - Users
-
-#     - name: Enable Remote Desktop
-#       ansible.windows.win_regedit:
-#         path: HKLM:\System\CurrentControlSet\Control\Terminal Server
-#         name: fDenyTSConnections
-#         data: 0
-#         state: present
-        
-#     - name: Add user to Remote Desktop Users group
-#       ansible.windows.win_group_membership:
-#         name: "Remote Desktop Users"
-#         members: user
-#         state: present
-
-
-# ==============================
-# Command Logging (Linux Server)
-# ==============================
-
-- name: set up command logging
-  hosts: server
-  become: yes
-  roles:
-    - role: sandbox-logging
-      slf_destination_port: '{% if hostvars["man"] is defined -%} 514 {%- else -%} 515 {%- endif %}'
 
 
 # ==============================
@@ -80,7 +44,6 @@
 
 - name: remove stack name prefix from hostnames of Linux nodes
   hosts:
-    - server
     - routers
     - man
   gather_facts: yes
@@ -104,6 +67,7 @@
         regexp: '^\d+\.\d+\.\d+\.\d+\s+{{ stack_prefix }}'
         state: absent
       when: stack_prefix is defined
+
 
 # ==============================
 # DB Server Setup (MySQL + MongoDB)
@@ -139,13 +103,14 @@
 
 
 # ==============================
-# Disable QXL on db-server and kali
+# Disable QXL on db-server, kali, ejabberd-server
 # ==============================
 
 - name: disable qxl on new Linux nodes
   hosts:
     - db-server
     - kali
+    - ejabberd-server          # added
   gather_facts: yes
   become: yes
   tasks:
@@ -162,6 +127,7 @@
   hosts:
     - db-server
     - kali
+    - ejabberd-server          # added
   gather_facts: yes
   become: yes
   tasks:
@@ -183,10 +149,15 @@
         state: absent
       when: stack_prefix is defined
 
+
+# ==============================
+# Contestant user on all Linux hosts
+# ==============================
+
 - name: create contestant user on all Linux hosts
   hosts:
-    - server
     - db-server
+    - ejabberd-server          # added
     - kali
     - routers
   become: yes
