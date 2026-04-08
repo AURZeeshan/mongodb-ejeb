@@ -60,6 +60,10 @@ net_mappings:
 
 router_mappings:
   - router: router
+    network: server-switch
+    ip: 192.168.20.1
+
+  - router: router
     network: client-switch
     ip: 192.168.30.1
 
@@ -70,6 +74,7 @@ router_mappings:
 groups:
   - name: monitor-icmp
     nodes:
+      - server
       - db-server
       - ejabberd-server
       - kali
@@ -77,6 +82,7 @@ groups:
 
   - name: monitor-os
     nodes:
+      - server
       - db-server
       - ejabberd-server
       - kali
