@@ -1,5 +1,5 @@
 ---
-name: mongodb, mysql & ejabberd attack training
+name: mongodb, mysql and ejabberd attack training
 
 hosts:
   - name: db-server
