@@ -238,14 +238,17 @@
 # SECTION 8 — Register admin user + plant flag
 # ============================================================
 
+- name: Check if admin user already exists
+  command: ejabberdctl check_account "{{ ejabberd_admin_user }}" "{{ ejabberd_server_ip }}"
+  register: user_check
+  failed_when: false
+  changed_when: false
+
 - name: Register Ejabberd admin user
-  shell: >
-    ejabberdctl register {{ ejabberd_admin_user }} {{ ejabberd_server_ip }} {{ ejabberd_admin_password }}
-  register: register_result
-  failed_when:
-    - register_result.rc != 0
-    - "'already registered' not in register_result.stdout"
-    - "'already registered' not in register_result.stderr"
+  command: |
+    ejabberdctl register "{{ ejabberd_admin_user }}" "{{ ejabberd_server_ip }}" "{{ ejabberd_admin_password }}"
+  when: user_check.rc != 0
+  register: admin_registered
 
 - name: Plant flag in ejabberd config comment (training task target)
   lineinfile:

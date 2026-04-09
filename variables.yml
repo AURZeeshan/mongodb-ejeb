@@ -26,9 +26,3 @@ mongo_flag:
 
 ejabberd_flag:
     type: text          # ✅ Add this if missing
-
-ejabberd_admin_password:
-    type: text          # ✅ Add this if missing
-
-ejabberd_db_password:
-    type: text          # ✅ Add this if missing
