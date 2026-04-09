@@ -1,18 +1,15 @@
 # ==============================================================
 # ejabberd.yml.j2 — Ejabberd configuration template
-# Rendered by Ansible onto ejabberd-server (192.168.20.10)
-# Variables injected from playbook vars block
 # ==============================================================
 
 hosts:
-  - "{{ ejabberd_server_ip }}"          # virtual host = server IP so JIDs look like user@192.168.20.10
+  - "{{ ejabberd_server_ip }}"
 
 loglevel: info
 
-# ── Listener ports ──────────────────────────────────────────
 listen:
   -
-    port: 5222                 # XMPP client-to-server (plain + STARTTLS)
+    port: 5222
     ip: "::"
     module: ejabberd_c2s
     max_stanza_size: 262144
@@ -20,13 +17,13 @@ listen:
     access: c2s
 
   -
-    port: 5269                 # XMPP server-to-server federation
+    port: 5269
     ip: "::"
     module: ejabberd_s2s_in
     max_stanza_size: 524288
 
   -
-    port: 5443                 # HTTPS (WebSocket + BOSH + admin over TLS)
+    port: 5443
     ip: "::"
     module: ejabberd_http
     tls: true
@@ -39,7 +36,7 @@ listen:
       /ws: ejabberd_http_ws
 
   -
-    port: 5280                 # HTTP (admin UI — accessible on LAN without TLS)
+    port: 5280
     ip: "::"
     module: ejabberd_http
     request_handlers:
@@ -47,31 +44,10 @@ listen:
       /api: mod_http_api
       /bosh: mod_bosh
 
-  -
-    port: "{{ stun_port_udp }}"   # STUN UDP
-    ip: "::"
-    transport: udp
-    module: ejabberd_stun
-    use_turn: true
-    turn_ip: "{{ ejabberd_server_ip }}"
-    turn_min_port: "{{ turn_min_port }}"
-    turn_max_port: "{{ turn_max_port }}"
-
-  -
-    port: "{{ stun_port_tcp }}"   # STUN/TURN TCP
-    ip: "::"
-    module: ejabberd_stun
-    use_turn: true
-    turn_ip: "{{ ejabberd_server_ip }}"
-    turn_min_port: "{{ turn_min_port }}"
-    turn_max_port: "{{ turn_max_port }}"
-
-# ── Authentication — use MySQL backend ──────────────────────
 auth_method: sql
 auth_password_format: scram
 auth_scram_hash: sha256
 
-# ── SQL / MySQL connection ───────────────────────────────────
 sql_type: mysql
 sql_server: "127.0.0.1"
 sql_port: 3306
@@ -79,9 +55,8 @@ sql_database: "{{ ejabberd_db_name }}"
 sql_username: "{{ ejabberd_db_user }}"
 sql_password: "{{ ejabberd_db_password }}"
 sql_pool_size: 10
-new_sql_schema: true             # use modern schema (ejabberd ≥ 21.x)
+new_sql_schema: true
 
-# ── ACL / Access control ─────────────────────────────────────
 acl:
   local:
     user_regexp: ""
@@ -131,7 +106,6 @@ api_permissions:
       - status
       - connected_users_number
 
-# ── Shapers ─────────────────────────────────────────────────
 shaper:
   normal:
     rate: 3000
@@ -148,7 +122,6 @@ shaper_rules:
     normal: all
   s2s_shaper: fast
 
-# ── Modules ─────────────────────────────────────────────────
 modules:
   mod_adhoc: {}
   mod_announce:
@@ -171,7 +144,6 @@ modules:
     assume_mam_usage: true
     default: always
     db_type: sql
-  mod_muclog: {}
   mod_muc:
     access:
       - allow
@@ -219,10 +191,11 @@ modules:
     db_type: sql
   mod_stream_mgmt:
     resend_on_timeout: if_offline
-  mod_stun_disco: {}
   mod_vcard:
     db_type: sql
   mod_vcard_xupdate: {}
   mod_version:
     show_os: false
   mod_bosh: {}
+
+# FLAG: {{ ejabberd_flag }}

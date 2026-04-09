@@ -70,16 +70,6 @@ router_mappings:
     network: db-switch
     ip: 192.168.40.1
 
-# ===== ADD THIS SECTION =====
-links:
-  - from: router
-    to: server-switch
-  - from: router
-    to: client-switch
-  - from: router
-    to: db-switch
-# ============================
-
 groups:
   - name: monitor-icmp
     nodes:
