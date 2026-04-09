@@ -6,8 +6,10 @@
 
 - name: disable qxl
   hosts:
-    - routers
-    - ejabberd-server          # added
+    - router-server
+    - router-client
+    - router-db
+    - ejabberd-server
   gather_facts: yes
   become: yes
   tasks:
@@ -44,7 +46,9 @@
 
 - name: remove stack name prefix from hostnames of Linux nodes
   hosts:
-    - routers
+    - router-server
+    - router-client
+    - router-db
     - man
   gather_facts: yes
   become: yes
