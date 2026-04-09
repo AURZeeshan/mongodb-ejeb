@@ -1,3 +1,4 @@
+# Sandbox Parameters Definition
 telnet_port:
     type: port
     min: 1500
@@ -21,4 +22,13 @@ mongo_password:
     type: text
 
 mongo_flag:
-    type: text    # ← was mongodb-flag, not a valid type
+    type: text          # ✅ Fixed - was incorrectly set to 'mongodb-flag'
+
+ejabberd_flag:
+    type: text          # ✅ Add this if missing
+
+ejabberd_admin_password:
+    type: text          # ✅ Add this if missing
+
+ejabberd_db_password:
+    type: text          # ✅ Add this if missing
