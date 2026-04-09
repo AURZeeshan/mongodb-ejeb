@@ -24,21 +24,7 @@ hosts:
     flavor: standard.medium
 
 routers:
-  - name: router-server
-    base_box:
-      image: debian-12-x86_64
-      mgmt_user: debian
-      mgmt_protocol: ssh
-    flavor: standard.small
-
-  - name: router-client
-    base_box:
-      image: debian-12-x86_64
-      mgmt_user: debian
-      mgmt_protocol: ssh
-    flavor: standard.small
-
-  - name: router-db
+  - name: router
     base_box:
       image: debian-12-x86_64
       mgmt_user: debian
@@ -49,14 +35,20 @@ networks:
   - name: server-switch
     cidr: 192.168.20.0/24
     accessible_by_user: false
+    router: router
+    router_ip: 192.168.20.1
 
   - name: client-switch
     cidr: 192.168.30.0/24
     accessible_by_user: true
+    router: router
+    router_ip: 192.168.30.1
 
   - name: db-switch
     cidr: 192.168.40.0/24
     accessible_by_user: false
+    router: router
+    router_ip: 192.168.40.1
 
 net_mappings:
   - host: ejabberd-server
@@ -71,34 +63,17 @@ net_mappings:
     network: db-switch
     ip: 192.168.40.5
 
-router_mappings:
-  - router: router-server
-    network: server-switch
-    ip: 192.168.20.1
-
-  - router: router-client
-    network: client-switch
-    ip: 192.168.30.1
-
-  - router: router-db
-    network: db-switch
-    ip: 192.168.40.1
-
 groups:
   - name: monitor-icmp
     nodes:
       - ejabberd-server
       - db-server
       - kali
-      - router-server
-      - router-client
-      - router-db
+      - router
 
   - name: monitor-os
     nodes:
       - ejabberd-server
       - db-server
       - kali
-      - router-server
-      - router-client
-      - router-db
+      - router
