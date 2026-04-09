@@ -35,20 +35,14 @@ networks:
   - name: server-switch
     cidr: 192.168.20.0/24
     accessible_by_user: false
-    router: router
-    router_ip: 192.168.20.1
 
   - name: client-switch
     cidr: 192.168.30.0/24
     accessible_by_user: true
-    router: router
-    router_ip: 192.168.30.1
 
   - name: db-switch
     cidr: 192.168.40.0/24
     accessible_by_user: false
-    router: router
-    router_ip: 192.168.40.1
 
 net_mappings:
   - host: ejabberd-server
@@ -62,6 +56,19 @@ net_mappings:
   - host: db-server
     network: db-switch
     ip: 192.168.40.5
+
+router_mappings:
+  - router: router
+    network: server-switch
+    ip: 192.168.20.1
+
+  - router: router
+    network: client-switch
+    ip: 192.168.30.1
+
+  - router: router
+    network: db-switch
+    ip: 192.168.40.1
 
 groups:
   - name: monitor-icmp
