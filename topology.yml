@@ -70,17 +70,18 @@ router_mappings:
     network: db-switch
     ip: 192.168.40.1
 
-groups:
-  - name: monitor-icmp
-    nodes:
-      - ejabberd-server
-      - db-server
-      - kali
-      - router
+groups: []
+# groups:
+#   - name: monitor-icmp
+#     nodes:
+#       - ejabberd-server
+#       - db-server
+#       - kali
+#       - router
 
-  - name: monitor-os
-    nodes:
-      - ejabberd-server
-      - db-server
-      - kali
-      - router
+#   - name: monitor-os
+#     nodes:
+#       - ejabberd-server
+#       - db-server
+#       - kali
+#       - router
