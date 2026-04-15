@@ -1,0 +1,9 @@
+# roles/ejabberd-server/defaults/main.yml
+ejabberd_db_password: "Ejabberd@1234"
+ejabberd_db_user: "ejabberd"
+ejabberd_db_name: "ejabberd"
+mysql_root_password: "Root@1234"
+ejabberd_admin_user: "admin"
+ejabberd_admin_password: "Admin@1234"
+ejabberd_server_ip: "{{ ansible_host }}"
+ejabberd_flag: "FLAG{your_flag_here}"
