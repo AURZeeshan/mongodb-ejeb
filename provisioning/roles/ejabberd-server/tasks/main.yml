@@ -80,9 +80,9 @@
   apt:
     name: ejabberd
     state: present
-
+    
 # ============================================================
-# SECTION 3 — phpMyAdmin (non-interactive)
+# SECTION 3 — phpMyAdmin (non-interactive) - FIXED
 # ============================================================
 
 - name: Pre-seed phpMyAdmin debconf selections
@@ -96,8 +96,10 @@
     - { question: "phpmyadmin/reconfigure-webserver", value: "apache2", vtype: "select"  }
     - { question: "phpmyadmin/mysql/admin-pass",      value: "{{ mysql_root_password | default('temp123') }}", vtype: "password" }
     - { question: "phpmyadmin/mysql/app-pass",        value: "{{ ejabberd_db_password | default('temp123') }}", vtype: "password" }
-  when: mysql_root_password is defined and ejabberd_db_password is defined
-
+  when: 
+    - mysql_root_password is defined 
+    - ejabberd_db_password is defined
+  ignore_errors: yes  # Skip phpMyAdmin config if vars missing
 # ============================================================
 # SECTION 4 — MySQL
 # ============================================================

@@ -8,7 +8,7 @@ mongo_flag: "FLAG{mongodb_no_auth_misconfiguration}"
 
 # Ejabberd
 ejabberd_admin_password: "Admin@1234"
-ejabberd_db_password: "EjabberdDB@123"
+ejabberd_db_password: "SomeActualPassword123"
 ejabberd_db_name: "ejabberd"
 ejabberd_db_user: "ejabberd"
 ejabberd_flag: "FLAG{ejabberd_xmpp_misconfigured}"
